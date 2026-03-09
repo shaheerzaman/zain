@@ -1,0 +1,7 @@
+.env
+.zain/
+.venv
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+fastapi-proj

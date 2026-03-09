@@ -1,0 +1,33 @@
+[project]
+name = "zain"
+version = "0.1.0"
+description = "CLI coding agent built with LangChain"
+readme = "README.md"
+authors = [
+    { name = "Mohammad Shaheer Zaman", email = "mohammad.shaheer.zaman@turing.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "langchain>=1.2.10",
+    "langchain-openai>=1.1.10",
+    "langchain-tavily>=0.2.17",
+    "langgraph-checkpoint-sqlite>=3.0.3",
+    "python-dotenv>=1.2.2",
+    "rich>=14.3.3",
+    "typer>=0.24.1",
+]
+
+[project.scripts]
+zain = "nirvana_coding_agent:main"
+
+[build-system]
+requires = ["uv_build>=0.8.19,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "nirvana_coding_agent"
+
+[tool.uv.workspace]
+members = [
+    "fastapi-proj",
+]
