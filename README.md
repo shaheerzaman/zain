@@ -321,11 +321,6 @@ uv sync
 uv run zain /path/to/workspace
 ```
 
-### Verify the code
-
-```bash
-uv run python -m compileall src
-```
 
 ## Roadmap Ideas
 
