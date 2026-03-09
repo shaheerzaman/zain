@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from deepagents.backends import FilesystemBackend
+from deepagents.middleware import FilesystemMiddleware
 from langchain.agents import create_agent
 from langchain.agents.middleware import (
     FilesystemFileSearchMiddleware,
@@ -89,6 +91,9 @@ def build_agent(
             ),
             trigger=("fraction", settings.summary_trigger_fraction),
             keep=("messages", settings.summary_keep_messages),
+        ),
+        FilesystemMiddleware(
+            backend=FilesystemBackend(root_dir=str(workspace_root), virtual_mode=True)
         ),
         FilesystemFileSearchMiddleware(root_path=str(workspace_root)),
         ShellToolMiddleware(
@@ -229,8 +234,9 @@ def _build_system_prompt(
             "- Complete the checklist one item at a time instead of batching unrelated steps together.",
             "- Updating the todo list does not finish the job; continue executing the request after planning.",
             f"- Before the final answer, call `write_todos` one last time, read `{PLAN_RELATIVE_PATH}` again, verify all items are completed, delete the file, and only then reply.",
+            "- Use filesystem tools such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, and `grep` for structured file operations when they are a better fit than raw shell commands.",
             "- Use `glob_search` and `grep_search` for file discovery before broad shell scans.",
-            "- Use the `shell` tool for reading, creating, editing, renaming, and deleting files.",
+            "- Use the `shell` tool for command execution, package management, builds, tests, and cases where filesystem tools are not sufficient.",
             "- Search tools return workspace-rooted virtual paths like `/src/app.py`; convert these to shell paths like `src/app.py`.",
             "- Do not intentionally access files outside the workspace root.",
             "- Use the Tavily-backed `web_search` tool when you need current documentation or external references.",

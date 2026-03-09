@@ -24,6 +24,7 @@ workspace as the project root and keeps its work scoped there.
 - Workspace-rooted coding agent built with LangChain `create_agent()`
 - Azure OpenAI model integration through `AzureChatOpenAI`
 - Tavily-backed `web_search` tool for documentation and current references
+- Structured filesystem tools through `FilesystemMiddleware`
 - Shell execution through LangChain `ShellToolMiddleware` with host execution
 - File discovery through `FilesystemFileSearchMiddleware`
 - Explicit planning through `TodoListMiddleware`
@@ -140,6 +141,7 @@ directory. The default shell command timeout is 60 minutes.
 | --- | --- |
 | CLI | `Typer` + `Rich` |
 | Agent runtime | `LangChain` + `LangGraph` |
+| Filesystem tools | `deepagents` `FilesystemMiddleware` |
 | LLM | `Azure OpenAI` |
 | Web lookup | `Tavily` |
 | Memory | SQLite via `langgraph-checkpoint-sqlite` |
@@ -296,6 +298,12 @@ The result is:
 - persisted todo state
 - a real plan file inside the workspace
 - a guard against premature final answers
+
+It also combines two filesystem layers:
+
+- `FilesystemMiddleware` for direct file operations like `ls`, `read_file`,
+  `write_file`, `edit_file`, `glob`, and `grep`
+- `FilesystemFileSearchMiddleware` for repository search-oriented discovery
 
 This is especially useful for code generation, refactors, setup work, and
 multi-file changes.
