@@ -20,6 +20,7 @@ from langchain_tavily import TavilySearch
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from .config import Settings
+from .filesystem_paths import FilesystemPathMiddleware
 from .planning import PLAN_RELATIVE_PATH, PlanFileMiddleware
 
 CODING_TODO_SYSTEM_PROMPT = f"""
@@ -52,6 +53,34 @@ final answer to the user.
 You may skip `write_todos` only for purely conversational or extremely trivial requests
 that do not require tools or file changes.
 """.strip()
+
+FILESYSTEM_TOOL_DESCRIPTIONS = {
+    "ls": (
+        "List files in a workspace-rooted virtual directory. Use paths like `/`, "
+        "`/.zain`, or `/src/app`. Never use host paths like `/Users/...`."
+    ),
+    "read_file": (
+        "Read a file from the workspace using a virtual absolute path like "
+        "`/.zain/PLAN.md`, `/pyproject.toml`, or `/src/app/main.py`. "
+        "Do not use host filesystem paths."
+    ),
+    "write_file": (
+        "Create a new file in the workspace using a virtual absolute path like "
+        "`/README.md` or `/src/app/main.py`. Do not use host filesystem paths."
+    ),
+    "edit_file": (
+        "Edit an existing workspace file using a virtual absolute path like "
+        "`/src/app/main.py`. Do not use host filesystem paths."
+    ),
+    "glob": (
+        "Find workspace files with a glob pattern. Use a virtual base path like `/` "
+        "or `/src`. Do not use host filesystem paths."
+    ),
+    "grep": (
+        "Search workspace files for text. If you provide `path`, use a workspace-rooted "
+        "virtual path like `/src` or `/.zain`. Do not use host filesystem paths."
+    ),
+}
 
 @dataclass(frozen=True)
 class ShellRuntime:
@@ -92,8 +121,10 @@ def build_agent(
             trigger=("fraction", settings.summary_trigger_fraction),
             keep=("messages", settings.summary_keep_messages),
         ),
+        FilesystemPathMiddleware(workspace_root),
         FilesystemMiddleware(
-            backend=FilesystemBackend(root_dir=str(workspace_root), virtual_mode=True)
+            backend=FilesystemBackend(root_dir=str(workspace_root), virtual_mode=True),
+            custom_tool_descriptions=FILESYSTEM_TOOL_DESCRIPTIONS,
         ),
         FilesystemFileSearchMiddleware(root_path=str(workspace_root)),
         ShellToolMiddleware(
@@ -235,9 +266,12 @@ def _build_system_prompt(
             "- Updating the todo list does not finish the job; continue executing the request after planning.",
             f"- Before the final answer, call `write_todos` one last time, read `{PLAN_RELATIVE_PATH}` again, verify all items are completed, delete the file, and only then reply.",
             "- Use filesystem tools such as `ls`, `read_file`, `write_file`, `edit_file`, `glob`, and `grep` for structured file operations when they are a better fit than raw shell commands.",
+            "- Filesystem tool paths must be workspace-rooted virtual paths like `/.zain/PLAN.md`, `/src/app/main.py`, or `/pyproject.toml`.",
+            f"- Never pass host absolute paths like `{workspace_root}/src/app/main.py` or `/Users/...` to filesystem tools.",
             "- Use `glob_search` and `grep_search` for file discovery before broad shell scans.",
             "- Use the `shell` tool for command execution, package management, builds, tests, and cases where filesystem tools are not sufficient.",
-            "- Search tools return workspace-rooted virtual paths like `/src/app.py`; convert these to shell paths like `src/app.py`.",
+            "- Search tools return workspace-rooted virtual paths like `/src/app.py`; keep that leading `/` for filesystem tools.",
+            "- Convert virtual paths like `/src/app.py` to shell paths like `src/app.py` only when using the shell tool.",
             "- Do not intentionally access files outside the workspace root.",
             "- Use the Tavily-backed `web_search` tool when you need current documentation or external references.",
             "- Keep responses concise and action-oriented.",

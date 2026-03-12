@@ -12,6 +12,7 @@ from langgraph.types import Command
 from .paths import APP_STATE_DIRNAME, PLAN_FILENAME
 
 PLAN_RELATIVE_PATH = f"{APP_STATE_DIRNAME}/{PLAN_FILENAME}"
+PLAN_FILESYSTEM_PATH = f"/{PLAN_RELATIVE_PATH}"
 
 
 class PlanFileMiddleware(AgentMiddleware[PlanningState[Any], None, Any]):
@@ -56,10 +57,12 @@ class PlanFileMiddleware(AgentMiddleware[PlanningState[Any], None, Any]):
         self._write_plan_file(todos)
         reminder = (
             f"The current todo list has been written to `{PLAN_RELATIVE_PATH}`. "
-            f"Read `{PLAN_RELATIVE_PATH}` before continuing, execute the plan one item "
-            "at a time, keep it in sync with `write_todos`, and before the final answer "
-            f"read `{PLAN_RELATIVE_PATH}` again, confirm every item is completed, delete "
-            "the file, and only then respond to the user."
+            f"If you use filesystem tools, read `{PLAN_FILESYSTEM_PATH}`. "
+            f"If you use the shell tool, read `{PLAN_RELATIVE_PATH}`. "
+            "Execute the plan one item at a time, keep it in sync with "
+            "`write_todos`, and before the final answer read the plan again, "
+            "confirm every item is completed, delete the file, and only then "
+            "respond to the user."
         )
         return _append_command_message(result, request.tool_call["id"], reminder)
 
@@ -88,9 +91,10 @@ class PlanFileMiddleware(AgentMiddleware[PlanningState[Any], None, Any]):
                     HumanMessage(
                         content=(
                             "Workflow reminder: do not answer the user yet. Read "
-                            f"`{PLAN_RELATIVE_PATH}` and continue the coding task by "
-                            "completing the remaining items one by one. Update the plan "
-                            "with `write_todos` as you make progress."
+                            f"`{PLAN_FILESYSTEM_PATH}` with filesystem tools or "
+                            f"`{PLAN_RELATIVE_PATH}` with the shell tool, then continue "
+                            "the coding task by completing the remaining items one by "
+                            "one. Update the plan with `write_todos` as you make progress."
                         )
                     )
                 ],
@@ -103,8 +107,9 @@ class PlanFileMiddleware(AgentMiddleware[PlanningState[Any], None, Any]):
                     HumanMessage(
                         content=(
                             "Workflow reminder: before your final answer, use the shell "
-                            f"tool to read `{PLAN_RELATIVE_PATH}` one more time, verify "
-                            "that every item is completed, delete the file, and only then "
+                            f"tool to read `{PLAN_RELATIVE_PATH}` or filesystem tools to "
+                            f"read `{PLAN_FILESYSTEM_PATH}` one more time, verify that "
+                            "every item is completed, delete the file, and only then "
                             "respond to the user."
                         )
                     )

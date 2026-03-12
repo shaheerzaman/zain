@@ -1,6 +1,6 @@
 [project]
 name = "zain"
-version = "0.1.0"
+version = "0.1.1"
 description = "Terminal coding agent with planning, memory, web search, and workspace-scoped tools"
 readme = "README.md"
 authors = [
